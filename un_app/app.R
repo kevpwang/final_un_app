@@ -23,7 +23,6 @@ ui <- fluidPage(
         "Analysis of UN General Assembly Votes",
         tabPanel(
             title = "About",
-            h5("By Kevin Wang"),
             h3("Background"),
             p(
                 "The United Nations General Assembly is 'the main deliberative, policymaking and representative organ of the UN' (https://www.un.org/en/ga/about/index.shtml). The UNGA meets in annual session in New York and is only body of the UN in which all member countries enjoy equal representation."
@@ -48,7 +47,10 @@ ui <- fluidPage(
                 "Each observation in the data represents a single vote by a country on a UNGA resolution. There are four kinds of votes: 'yes', 'no', 'abstain', and 'absent'. Each observation also records the final vote tally on the resolution and a short description of resolution's content. One variable in the data identifies votes that are considered 'important' by the US State Department. The 'issue code' variables classify certain resolutions by subject matter (e.g. 'Palestinian conflict', 'nuclear weapons', 'human rights'). This allows analysis of, for example, how a country tends to vote on a particular issue."
             ),
             p(
-                "Because the resolution descriptions in the voting dataset are brief, this project also uses data from the UN Digital Library to display more content from certain important resolutions."
+                "The GDP data comes from the World Bank and records the annual percentage change in GDP from all countries. Data is not necessarily available for all countries over all period of time."
+            ),
+            p(
+                "Citation: https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG."
             )
         ),
         tabPanel(
@@ -62,8 +64,22 @@ ui <- fluidPage(
                     selected = "United States"
                 ),
                 br(),
+                p(
+                    "Regression Summary contains specific statistical information."
+                ),
+                checkboxInput(
+                    inputId = "summary",
+                    label = "Show Regression Summary",
+                    value = FALSE
+                )
             ),
-            mainPanel(plotOutput("UNPlot"))
+            mainPanel(plotOutput("UNPlot")),
+            br(),
+            br(),
+            br(),
+            br(),
+            br(),
+            verbatimTextOutput("summary")
         ),
         tabPanel(
             title = "Statistical Choices"
@@ -75,7 +91,7 @@ ui <- fluidPage(
 server <- function(input, output) {
 
     output$UNPlot <- renderPlot({
-        plot_model <- majs_gdps %>% 
+        plot <- majs_gdps %>% 
             filter(str_detect(country_name, input$country)) %>% 
             ggplot(aes(x = growth, y = prop_maj)) +
             geom_point() +
@@ -93,7 +109,16 @@ server <- function(input, output) {
             theme(
                 plot.caption = element_text(margin = margin(20,1,1,1))
             )
-        plot_model
+        plot
+    })
+    
+    output$summary <- renderPrint({
+        if (input$summary == TRUE) {
+            country <- majs_gdps %>% 
+                filter(str_detect(country_name, input$country))
+            model <- lm(prop_maj ~ growth, data = country)
+            summary(model)
+        }
     })
 }
 
