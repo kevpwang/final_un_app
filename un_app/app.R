@@ -8,6 +8,15 @@
 #
 
 library(shiny)
+library(scales)
+library(ggthemes)
+library(tidyverse)
+
+majs_gdps <- read_rds("majs_gdps.rds")
+
+country_choices <- majs_gdps %>% 
+    distinct(country_name) %>% 
+    arrange()
 
 ui <- fluidPage(
     navbarPage(
@@ -43,7 +52,18 @@ ui <- fluidPage(
             )
         ),
         tabPanel(
-            title = "Model"
+            title = "Model",
+            sidebarPanel(
+                p("Select a country to see the relationship between its economy and UNGA voting power."),
+                selectInput(
+                    inputId = "country",
+                    label = "Country:",
+                    choices = country_choices,
+                    selected = "United States"
+                ),
+                br(),
+            ),
+            mainPanel(plotOutput("UNPlot"))
         ),
         tabPanel(
             title = "Statistical Choices"
@@ -54,13 +74,26 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+    output$UNPlot <- renderPlot({
+        plot_model <- majs_gdps %>% 
+            filter(str_detect(country_name, input$country)) %>% 
+            ggplot(aes(x = growth, y = prop_maj)) +
+            geom_point() +
+            geom_smooth(method = "lm", se = FALSE, size = 1) +
+            scale_x_continuous(labels = percent) +
+            scale_y_continuous(labels = percent) +
+            labs(
+                title = "Economic Growth vs. Frequency in UNGA Majority",
+                caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
+            ) + 
+            theme_fivethirtyeight() +
+            
+            # NB: use margin to shift elements up, down, &c. Top margin is first value.  
+            
+            theme(
+                plot.caption = element_text(margin = margin(20,1,1,1))
+            )
+        plot_model
     })
 }
 
