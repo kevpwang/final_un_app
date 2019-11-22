@@ -21,7 +21,8 @@ all_gdps <- read_csv("raw-data/all_gdps.csv", skip = 3,
   gather(key = "year", value = "growth", `1961`:`2018`) %>% 
   clean_names() %>% 
   select(country_name, country_code, year, growth) %>% 
+  mutate(year = as.numeric(year)) %>% 
   arrange(year) %>% 
-  filter(country_code %in% unique(un_data$country))
+  filter(country_code %in% unique(un_cleaned$country))
 
 write_rds(all_gdps, "clean-data/all_gdps.rds")

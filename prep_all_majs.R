@@ -22,6 +22,7 @@ all_majs <- votes %>%
   group_by(country, year) %>%
   summarize(maj = sum(in_minority == FALSE)) %>% 
   inner_join(total_votes, by = c("country", "year")) %>%
-  mutate(prop_maj = maj / total)
+  mutate(prop_maj = maj / total) %>% 
+  ungroup()
 
 write_rds(all_majs, "clean-data/all_majs.rds")
