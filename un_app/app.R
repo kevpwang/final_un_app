@@ -2,6 +2,7 @@ library(shiny)
 library(scales)
 library(ggthemes)
 library(gt)
+library(broom)
 library(tidyverse)
 
 # load relevant RDS for use in plot
@@ -76,15 +77,12 @@ ui <- fluidPage(
                 )
             ),
             mainPanel(plotOutput("UNPlot")),
-
-            # fix this later: line breaks seem to have no effect here
-
             br(),
             br(),
             br(),
             br(),
             br(),
-            verbatimTextOutput("summary")
+            tableOutput("summary")
         ),
         tabPanel(
             title = "Statistical Choices",
@@ -148,17 +146,15 @@ server <- function(input, output) {
         plot
     })
     
-    output$summary <- renderPrint({
+    output$summary <- renderTable(
         if (input$summary == TRUE) {
-            
-            # NB: cannot pipe into lm()
-            
             country <- majs_gdps %>% 
                 filter(str_detect(country_name, input$country))
             model <- lm(prop_maj ~ growth, data = country)
-            summary(model)
-        }
-    })
+            tidy(model)
+        },
+        align = "c"
+    )
 }
 
 # Run the application 
