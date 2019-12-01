@@ -1,6 +1,7 @@
 library(shiny)
 library(scales)
 library(ggthemes)
+library(gt)
 library(tidyverse)
 
 # load relevant RDS for use in plot
