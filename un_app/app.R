@@ -76,13 +76,11 @@ ui <- fluidPage(
                     value = FALSE
                 )
             ),
-            mainPanel(plotOutput("UNPlot")),
-            br(),
-            br(),
-            br(),
-            br(),
-            br(),
-            tableOutput("summary")
+            mainPanel(plotOutput("UNPlot"),
+                      br(),
+                      tableOutput("summary"),
+                      br(),
+                      plotOutput("majs_plot"))
         ),
         tabPanel(
             title = "Statistical Choices",
@@ -127,6 +125,40 @@ server <- function(input, output) {
             
             labs(
                 title = "Economic Growth vs. Frequency in UNGA Majority",
+                subtitle = paste(input$country, ", 1961-2018", sep = ""),
+                caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
+            ) + 
+            
+            # NB: fivethirtyeight() automatically hides x- and y-axis labels
+            
+            theme_fivethirtyeight() +
+            
+            # NB: use margin to shift elements up, down, &c. Top margin is first value.  
+            
+            theme(
+                plot.caption = element_text(margin = margin(20,1,1,1))
+            )
+        
+        # make sure to display separately
+        
+        plot
+    })
+    
+    output$majs_plot <- renderPlot({
+        plot <- majs_gdps %>% 
+            
+            # filter country_name based on received input from user
+            
+            filter(str_detect(country_name, input$country)) %>% 
+            ggplot(aes(x = year, y = prop_maj)) +
+            geom_line(color = "blue") +
+            scale_y_continuous(labels = percent) +
+            
+            # NB: concatenate strings with paste(), default sep = " "
+            # use user input to indicate that the plot is the right country
+            
+            labs(
+                title = "Frequency in UN Majority",
                 subtitle = paste(input$country, ", 1961-2018", sep = ""),
                 caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
             ) + 
