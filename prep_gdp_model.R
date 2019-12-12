@@ -10,7 +10,8 @@ un_cleaned <- read_rds("clean-data/un_cleaned.rds")
 # change factor to chr to remove potential warning for left_join()
 
 all_majs <- read_rds("clean-data/all_majs.rds") %>% 
-  mutate(country = as.character(country))
+  mutate(country = as.character(country)) %>% 
+  select(-countryname)
 
 # load cleaned GDP data
 
