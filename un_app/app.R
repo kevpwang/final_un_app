@@ -235,17 +235,10 @@ server <- function(input, output) {
     output$issues_majs_plot <- renderPlot({
         if(input$issue == "All") {
             plot <- all_majs %>% 
-                
-                # filter country_name based on received input from user
-                
                 filter(str_detect(countryname, input$country_issues)) %>% 
                 ggplot(aes(x = year, y = prop_maj)) +
                 geom_line(color = "blue", size = 1) +
                 scale_y_continuous(labels = percent) +
-                
-                # NB: concatenate strings with paste(), default sep = " "
-                # use user input to indicate that the plot is the right country
-                
                 labs(
                     title = "Frequency in UN Majority",
                     subtitle = input$country_issues,
@@ -269,9 +262,9 @@ server <- function(input, output) {
         else {
             plot <- issues_majs %>% 
                 
-                # filter country_name based on received input from user
+                # filter countryname and issue based on received input from user
                 
-                filter(str_detect(countryname, input$country)) %>% 
+                filter(str_detect(countryname, input$country_issues)) %>% 
                 filter(str_detect(issue, input$issue)) %>%
                 ggplot(aes(x = year, y = prop_maj)) +
                 geom_point() +
