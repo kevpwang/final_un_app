@@ -13,7 +13,7 @@ majs_gdps <- read_rds("majs_gdps.rds")
 issues_majs <- read_rds("issues_majs.rds")
 all_majs <- read_rds("all_majs.rds")
 
-# list of country choices for the drop-down menu
+#### menu choices ####
 
 country_choices_issues <- issues_majs %>% 
     distinct(countryname)
@@ -86,6 +86,10 @@ ui <- fluidPage(
         ),
         tabPanel(
             title = "Frequency of Majorities",
+            
+            # inputId goes into server
+            # inputId names must be distinct
+            
             sidebarPanel(
                 p("Select a country to see how often it votes in the majority."),
                 selectInput(
@@ -130,8 +134,11 @@ ui <- fluidPage(
                     value = FALSE
                 )
             ),
+            
+            # put all graphical elements in single mainPanel()
+            
             mainPanel(
-                plotOutput("UNPlot"),
+                plotOutput("gdp_plot"),
                 br(),
                 tableOutput("summary"),
             ),
@@ -195,8 +202,10 @@ ui <- fluidPage(
 #### server ####
 
 server <- function(input, output) {
+    
+    #### GDP plot ####
 
-    output$UNPlot <- renderPlot({
+    output$gdp_plot <- renderPlot({
         plot <- majs_gdps %>% 
             
         # filter country_name based on received input from user
@@ -232,7 +241,14 @@ server <- function(input, output) {
         plot
     })
     
+    #### Issue majorities plot ####
+    
     output$issues_majs_plot <- renderPlot({
+        
+        # if all issues selected, use cleaned all_majs data w/correct countryname var
+        # use inputId name
+        # use user input in plot subtitle
+        
         if(input$issue == "All") {
             plot <- all_majs %>% 
                 filter(str_detect(countryname, input$country_issues)) %>% 
@@ -259,6 +275,9 @@ server <- function(input, output) {
             
             plot
         }
+        
+        # if specific issue selected, use issues_majs; same countryname var
+        
         else {
             plot <- issues_majs %>% 
                 
@@ -267,12 +286,17 @@ server <- function(input, output) {
                 filter(str_detect(countryname, input$country_issues)) %>% 
                 filter(str_detect(issue, input$issue)) %>%
                 ggplot(aes(x = year, y = prop_maj)) +
+                
+                # geom_point() neccessary bc. not all issues appear in all years,
+                # so geom_line() alone will be misleading.
+                # make line thinner to display points
+                # limits ensures y-axis scale does not exceed 100%
+                
                 geom_point() +
                 geom_line(color = "blue", size = 0.5) +
                 scale_y_continuous(labels = percent, limits = c(0, 1)) +
                 
                 # NB: concatenate strings with paste(), default sep = " "
-                # use user input to indicate that the plot is the right country
                 
                 labs(
                     title = paste("Frequency in UN Majority", " on ", input$issue, sep = ""),
@@ -296,16 +320,22 @@ server <- function(input, output) {
         }
     })
     
-    output$summary <- renderTable(
+    #### Regression summary ####
+    
+    # tidy() in broom pkg is rendered as table
+    # give alignment arg in renderTable()
+    
+    output$summary <- renderTable({
         if (input$summary == TRUE) {
             country <- majs_gdps %>% 
                 filter(str_detect(country_name, input$country_gdps))
             model <- lm(prop_maj ~ growth, data = country)
             tidy(model)
-        },
-        align = "c"
+        }
+    },
+    align = "c"
     )
 }
 
-# Run the application 
+#### run the application #### 
 shinyApp(ui = ui, server = server)
