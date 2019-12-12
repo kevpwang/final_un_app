@@ -26,6 +26,7 @@ total_votes <- votes %>%
 
 # convoluted ifelse() needed to compare VALUE of
 # particular vote to COLUMN NAME ('yes' or 'no')
+# keep countryname for use in app with issues_majs
 
 all_majs <- votes %>% 
   mutate(in_minority = ifelse(colnames(yes_no)[max.col(yes_no)] != vote, TRUE, FALSE)) %>%

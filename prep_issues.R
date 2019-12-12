@@ -6,6 +6,9 @@ library(tidyverse)
 
 un_cleaned <- read_rds("clean-data/un_cleaned.rds")
 
+# create issue col to replace individual binary issue cols
+# properly labelled names for use in app
+
 un_issues <- un_cleaned %>% 
   mutate(issue = case_when(
     `me` == 1 ~ "Palestinian Conflict",
@@ -15,7 +18,8 @@ un_issues <- un_cleaned %>%
     `co` == 1 ~ "Colonialism",
     `ec` == 1 ~ "Economic Development",
     TRUE ~ "other"
-  ))
+    )
+  )
 
 # recode all vote codes for easy comparison
 
@@ -37,6 +41,7 @@ total_votes <- votes %>%
 
 # convoluted ifelse() needed to compare VALUE of
 # particular vote to COLUMN NAME ('yes' or 'no')
+# group by issue; not all issues will appear in all years
 
 issues_majs <- votes %>% 
   mutate(in_minority = ifelse(colnames(yes_no)[max.col(yes_no)] != vote, TRUE, FALSE)) %>%
