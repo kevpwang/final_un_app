@@ -32,7 +32,7 @@ yes_no <- votes %>% select(yes, no)
 # anomalous majority proportions unrelated to real data
 
 total_votes <- votes %>%
-  group_by(country, year, issue) %>% 
+  group_by(countryname, year, issue) %>% 
   summarize(total = n())
 
 # convoluted ifelse() needed to compare VALUE of
@@ -40,13 +40,13 @@ total_votes <- votes %>%
 
 issues_majs <- votes %>% 
   mutate(in_minority = ifelse(colnames(yes_no)[max.col(yes_no)] != vote, TRUE, FALSE)) %>%
-  group_by(country, year, issue) %>%
+  group_by(countryname, year, issue) %>%
   summarize(maj = sum(in_minority == FALSE)) %>%
   
   # use inner_join() because mutate(total = total_votes$total) throws a length error
   # NB: can pipe into inner_join()
   
-  inner_join(total_votes, by = c("country", "year", "issue")) %>%
+  inner_join(total_votes, by = c("countryname", "year", "issue")) %>%
   mutate(prop_maj = maj / total) %>% 
   
   # NB: ungroup() lest metadata interfere with later analysis
