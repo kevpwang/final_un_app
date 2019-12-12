@@ -8,12 +8,12 @@ un_cleaned <- read_rds("clean-data/un_cleaned.rds")
 
 un_issues <- un_cleaned %>% 
   mutate(issue = case_when(
-    `me` == 1 ~ "me",
-    `nu` == 1 ~ "nu",
-    `di` == 1 ~ "di",
-    `hr` == 1 ~ "hr",
-    `co` == 1 ~ "co",
-    `ec` == 1 ~ "ec",
+    `me` == 1 ~ "Palestinian Conflict",
+    `nu` == 1 ~ "Nuclear Weapons",
+    `di` == 1 ~ "Arms Control",
+    `hr` == 1 ~ "Human Rights",
+    `co` == 1 ~ "Colonialism",
+    `ec` == 1 ~ "Economic Development",
     TRUE ~ "other"
   ))
 
