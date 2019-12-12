@@ -2,10 +2,6 @@ library(fs)
 library(janitor)
 library(tidyverse)
 
-# load cleaned UN data
-
-un_cleaned <- read_rds("clean-data/un_cleaned.rds")
-
 # load cleaned majorities data
 # change factor to chr to remove potential warning for left_join()
 

@@ -10,6 +10,7 @@ library(janitor)
 un_data <- read.csv("raw-data/un_data.csv", fileEncoding = "latin1") %>%
   clean_names() %>%
   arrange(year) %>%
+  drop_na(yes) %>% 
   replace_na(list(no = 0))
 
 # write to clean-data folder for later use

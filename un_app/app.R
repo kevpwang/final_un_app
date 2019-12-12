@@ -140,7 +140,7 @@ ui <- fluidPage(
             mainPanel(
                 plotOutput("gdp_plot"),
                 br(),
-                tableOutput("summary"),
+                tableOutput("summary")
             ),
         ),
         tabPanel(
@@ -203,7 +203,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
     
-    #### GDP plot ####
+    #### GDP regression plot ####
 
     output$gdp_plot <- renderPlot({
         plot <- majs_gdps %>% 
@@ -253,7 +253,8 @@ server <- function(input, output) {
             plot <- all_majs %>% 
                 filter(str_detect(countryname, input$country_issues)) %>% 
                 ggplot(aes(x = year, y = prop_maj)) +
-                geom_line(color = "blue", size = 1) +
+                geom_point() +
+                geom_line(color = "blue", size = 0.75) +
                 scale_y_continuous(labels = percent, limits = c(0, 1)) +
                 labs(
                     title = "Frequency in UN Majority",
@@ -293,7 +294,7 @@ server <- function(input, output) {
                 # limits ensures y-axis scale does not exceed 100%
                 
                 geom_point() +
-                geom_line(color = "blue", size = 0.5) +
+                geom_line(color = "blue", size = 0.75) +
                 scale_y_continuous(labels = percent, limits = c(0, 1)) +
                 
                 # NB: concatenate strings with paste(), default sep = " "
@@ -335,6 +336,24 @@ server <- function(input, output) {
     },
     align = "c"
     )
+    
+    #### GDP coefficients plot ####
+    output$gdp_coefs <- renderPlot ({
+        gdp_models <- majs_gdps %>% 
+            group_by(country_name) %>% 
+            nest() %>% 
+            mutate(model = map(data, ~lm(prop_maj ~ growth, data = .x))) %>% 
+            mutate(coefficients = map(model, ~coef(.x))) %>% 
+            mutate(growth_coef = map_dbl(coefficients, ~pluck(.x, "growth"))) %>%
+            select(-model, -data, -coefficients) %>% 
+            ungroup()
+        
+        plot <- ggplot(gdp_models, aes(x = growth_coef, y = fct_reorder(country_name, growth_coef, .fun = median))) +
+            geom_point()
+        
+        plot
+    })
+    
 }
 
 #### run the application #### 
