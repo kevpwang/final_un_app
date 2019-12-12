@@ -1,3 +1,5 @@
+#### libraries ####
+
 library(shiny)
 library(scales)
 library(ggthemes)
@@ -5,23 +7,56 @@ library(gt)
 library(broom)
 library(tidyverse)
 
-# load relevant RDS for use in plot
+#### load relevant data ####
 
 majs_gdps <- read_rds("majs_gdps.rds")
+issues_majs <- read_rds("issues_majs.rds")
+all_majs <- read_rds("all_majs.rds")
 
 # list of country choices for the drop-down menu
 
-country_choices <- majs_gdps %>% 
+country_choices_issues <- issues_majs %>% 
+    distinct(countryname)
+
+country_choices_gdps <- majs_gdps %>% 
     distinct(country_name) %>% 
     arrange()
 
-####### UI #######
+issue_choices <- issues_majs %>% 
+    distinct(issue) %>% 
+    add_row(issue = "All") %>% 
+    filter(issue != "other") %>% 
+    arrange()
+
+#### ui ####
 
 ui <- fluidPage(
     navbarPage(
         "Analysis of UN General Assembly Votes",
         tabPanel(
-            title = "Model",
+            title = "Frequency of Majorities",
+            sidebarPanel(
+                p("Select a country to see how often it votes in the majority."),
+                selectInput(
+                    inputId = "country_issues",
+                    label = "Country:",
+                    choices = country_choices_issues,
+                    selected = "United States of America"
+                ),
+                p("Select an issue category."),
+                selectInput(
+                    inputId = "issue",
+                    label = "Issue:",
+                    choices = issue_choices,
+                    selected = "All"
+                )
+            ),
+            mainPanel(
+                plotOutput("issues_majs_plot")
+            ),
+        ),
+        tabPanel(
+            title = "GDP Model",
             sidebarPanel(
                 p("Select a country to see the relationship between its economy and UNGA voting power."),
                 
@@ -29,9 +64,9 @@ ui <- fluidPage(
                 # set default value with selected, same with value in checkboxInput()
                 
                 selectInput(
-                    inputId = "country",
+                    inputId = "country_gdps",
                     label = "Country:",
-                    choices = country_choices,
+                    choices = country_choices_gdps,
                     selected = "United States"
                 ),
                 br(),
@@ -44,11 +79,11 @@ ui <- fluidPage(
                     value = FALSE
                 )
             ),
-            mainPanel(plotOutput("UNPlot"),
-                      br(),
-                      tableOutput("summary"),
-                      br(),
-                      plotOutput("majs_plot"))
+            mainPanel(
+                plotOutput("UNPlot"),
+                br(),
+                tableOutput("summary"),
+            ),
         ),
         tabPanel(
             title = "About",
@@ -157,6 +192,8 @@ ui <- fluidPage(
     )
 )
 
+#### server ####
+
 server <- function(input, output) {
 
     output$UNPlot <- renderPlot({
@@ -164,7 +201,7 @@ server <- function(input, output) {
             
         # filter country_name based on received input from user
             
-            filter(str_detect(country_name, input$country)) %>% 
+            filter(str_detect(country_name, input$country_gdps)) %>% 
             ggplot(aes(x = growth, y = prop_maj)) +
             geom_point() +
             geom_smooth(method = "lm", se = FALSE, size = 1) +
@@ -176,7 +213,7 @@ server <- function(input, output) {
             
             labs(
                 title = "Economic Growth vs. Frequency in UNGA Majority",
-                subtitle = paste(input$country, ", 1961-2018", sep = ""),
+                subtitle = paste(input$country_gdps, ", 1961-2018", sep = ""),
                 caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
             ) + 
             
@@ -195,44 +232,81 @@ server <- function(input, output) {
         plot
     })
     
-    output$majs_plot <- renderPlot({
-        plot <- majs_gdps %>% 
+    output$issues_majs_plot <- renderPlot({
+        if(input$issue == "All") {
+            plot <- all_majs %>% 
+                
+                # filter country_name based on received input from user
+                
+                filter(str_detect(countryname, input$country_issues)) %>% 
+                ggplot(aes(x = year, y = prop_maj)) +
+                geom_line(color = "blue", size = 1) +
+                scale_y_continuous(labels = percent) +
+                
+                # NB: concatenate strings with paste(), default sep = " "
+                # use user input to indicate that the plot is the right country
+                
+                labs(
+                    title = "Frequency in UN Majority",
+                    subtitle = input$country_issues,
+                    caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
+                ) + 
+                
+                # NB: fivethirtyeight() automatically hides x- and y-axis labels
+                
+                theme_fivethirtyeight() +
+                
+                # NB: use margin to shift elements up, down, &c. Top margin is first value.  
+                
+                theme(
+                    plot.caption = element_text(margin = margin(20,1,1,1))
+                )
             
-            # filter country_name based on received input from user
+            # make sure to display separately
             
-            filter(str_detect(country_name, input$country)) %>% 
-            ggplot(aes(x = year, y = prop_maj)) +
-            geom_line(color = "blue", size = 1) +
-            scale_y_continuous(labels = percent) +
+            plot
+        }
+        else {
+            plot <- issues_majs %>% 
+                
+                # filter country_name based on received input from user
+                
+                filter(str_detect(countryname, input$country)) %>% 
+                filter(str_detect(issue, input$issue)) %>%
+                ggplot(aes(x = year, y = prop_maj)) +
+                geom_point() +
+                geom_line(color = "blue", size = 0.5) +
+                scale_y_continuous(labels = percent) +
+                
+                # NB: concatenate strings with paste(), default sep = " "
+                # use user input to indicate that the plot is the right country
+                
+                labs(
+                    title = paste("Frequency in UN Majority", " on ", input$issue, sep = ""),
+                    subtitle = paste(input$country, ", 1961-2018", sep = ""),
+                    caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
+                ) + 
+                
+                # NB: fivethirtyeight() automatically hides x- and y-axis labels
+                
+                theme_fivethirtyeight() +
+                
+                # NB: use margin to shift elements up, down, &c. Top margin is first value.  
+                
+                theme(
+                    plot.caption = element_text(margin = margin(20,1,1,1))
+                )
             
-            # NB: concatenate strings with paste(), default sep = " "
-            # use user input to indicate that the plot is the right country
+            # make sure to display separately
             
-            labs(
-                title = "Frequency in UN Majority",
-                subtitle = paste(input$country, ", 1961-2018", sep = ""),
-                caption = 'Source: Erik Voeten, "Data and Analyses of Voting in the UN General Assembly"'
-            ) + 
-            
-            # NB: fivethirtyeight() automatically hides x- and y-axis labels
-            
-            theme_fivethirtyeight() +
-            
-            # NB: use margin to shift elements up, down, &c. Top margin is first value.  
-            
-            theme(
-                plot.caption = element_text(margin = margin(20,1,1,1))
-            )
-        
-        # make sure to display separately
-        
-        plot
+            plot
+        }
     })
     
     output$summary <- renderTable(
         if (input$summary == TRUE) {
             country <- majs_gdps %>% 
-                filter(str_detect(country_name, input$country))
+                filter(str_detect(country_name, input$country_gdps))
             model <- lm(prop_maj ~ growth, data = country)
             tidy(model)
         },
