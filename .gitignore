@@ -10,3 +10,4 @@ stat_choices
 .gitattributes
 rsconnect
 Codebook.pdf
+*.docx
