@@ -45,7 +45,7 @@ total_votes <- votes %>%
 
 issues_majs <- votes %>% 
   mutate(in_minority = ifelse(colnames(yes_no)[max.col(yes_no)] != vote, TRUE, FALSE)) %>%
-  group_by(countryname, year, issue) %>%
+  group_by(country, countryname, year, issue) %>%
   summarize(maj = sum(in_minority == FALSE)) %>%
   
   # use inner_join() because mutate(total = total_votes$total) throws a length error
